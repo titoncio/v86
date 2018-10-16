@@ -105,16 +105,15 @@ function SpeakerMixer(bus, audio_context)
     this.input_left = this.node_treble_left;
     this.input_right = this.node_treble_right;
 
-    this.node_treble_left
-        .connect(this.node_bass_left)
-        .connect(this.node_gain_left)
-        .connect(this.node_merger, 0, 0);
-    this.node_treble_right
-        .connect(this.node_bass_right)
-        .connect(this.node_gain_right)
-        .connect(this.node_merger, 0, 1);
-    this.node_merger
-        .connect(this.audio_context.destination);
+    this.node_treble_left.connect(this.node_bass_left);
+    this.node_bass_left.connect(this.node_gain_left);
+    this.node_gain_left.connect(this.node_merger, 0, 0);
+
+    this.node_treble_right.connect(this.node_bass_right);
+    this.node_bass_right.connect(this.node_gain_right);
+    this.node_gain_right.connect(this.node_merger, 0, 1);
+
+    this.node_merger.connect(this.audio_context.destination);
 
     // Interface
 
@@ -148,7 +147,7 @@ function SpeakerMixer(bus, audio_context)
             return;
         }
 
-        source.set_volume(gain);
+        source.set_volume(gain, channel);
     }, this);
 
     bus.register("mixer-gain-left", function(/** number */ decibels)
@@ -298,14 +297,13 @@ function SpeakerMixerSource(audio_context, source_node, destination_left, destin
 
     // Graph
 
-    source_node
-        .connect(this.node_splitter);
-    this.node_splitter
-        .connect(this.node_gain_left, 0)
-        .connect(destination_left);
-    this.node_splitter
-        .connect(this.node_gain_right, 1)
-        .connect(destination_right);
+    source_node.connect(this.node_splitter);
+
+    this.node_splitter.connect(this.node_gain_left, 0);
+    this.node_gain_left.connect(destination_left);
+
+    this.node_splitter.connect(this.node_gain_right, 1);
+    this.node_gain_right.connect(destination_right);
 }
 
 SpeakerMixerSource.prototype.update = function()
@@ -744,6 +742,11 @@ function SpeakerWorkletDAC(bus, audio_context, mixer)
     var worklet_code_end = worklet_string.lastIndexOf("}");
     var worklet_code = worklet_string.substring(worklet_code_start, worklet_code_end);
 
+    if(DEBUG)
+    {
+        worklet_code = "var DEBUG = true;\n" + worklet_code;
+    }
+
     var worklet_blob = new Blob([worklet_code], { type: "application/javascript" });
     var worklet_url = URL.createObjectURL(worklet_blob);
 
@@ -788,8 +791,7 @@ function SpeakerWorkletDAC(bus, audio_context, mixer)
 
         // Graph
 
-        this.node_processor
-            .connect(this.node_output);
+        this.node_processor.connect(this.node_output);
     });
 
     // Interface
@@ -1023,8 +1025,7 @@ function SpeakerDACDebugger(audio_context, source_node)
     this.node_gain = this.audio_context.createGain();
     this.node_gain.gain.setValueAtTime(0, this.audio_context.currentTime);
 
-    this.node_gain
-        .connect(this.audio_context.destination);
+    this.node_gain.connect(this.audio_context.destination);
 
     this.is_active = false;
     this.queued_history = [];
@@ -1049,9 +1050,8 @@ SpeakerDACDebugger.prototype.start = function(duration_ms)
         this.output[1].push(event.inputBuffer.getChannelData(1).slice());
     };
 
-    this.node_source
-        .connect(this.node_processor)
-        .connect(this.node_gain);
+    this.node_source.connect(this.node_processor);
+    this.node_processor.connect(this.node_gain);
 
     setTimeout(() =>
     {

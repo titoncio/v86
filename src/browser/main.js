@@ -9,10 +9,10 @@
     var HOST = ON_LOCALHOST ? "" : "//i.copy.sh/";
 
     /** @const */
-    var OTHER_HOST = ON_LOCALHOST ? "" : "//j.copy.sh:8880/";
+    var ON_HTTPS = location.protocol === "https:";
 
     /** @const */
-    var ON_HTTPS = location.protocol === "https:";
+    var OTHER_HOST = ON_LOCALHOST ? "" : ON_HTTPS ? "//j.copy.sh:8443/" : "//j.copy.sh:8880/";
 
     /**
      * @return {Object.<string, string>}
@@ -357,7 +357,7 @@
                 id: "reactos",
                 memory_size: 256 * 1024 * 1024,
                 cdrom: {
-                    "url": HOST + "images/ReactOS-0.4.4-live.iso",
+                    "url": HOST + "images/ReactOS-0.4.9-RC-Live.iso",
                     "async": true,
                 },
                 state: {
